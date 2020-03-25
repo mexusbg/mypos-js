@@ -1,170 +1,170 @@
-const constants = require('constants'),
-  crypto = require('crypto'),
-  axios = require('axios'),
-  flatten = require('flat'),
-  he = require('he'),
-  creditCardType = require('credit-card-type');
+const constants = require('constants')
+const crypto = require('crypto')
+const axios = require('axios')
+const flatten = require('flat')
+const he = require('he')
+const creditCardType = require('credit-card-type')
 
-  ipc_exception = require('./IPC_Exception'),
-  enums = require('./Enums');
+ipc_exception = require('./IPC_Exception'),
+  enums = require('./Enums')
 
 module.exports = (() => {
   this.isValidConfig = (config) => {
     if (!config.keyIndex || !Number.isInteger(config.keyIndex)) {
-      throw new ipc_exception('Invalid Key Index');
+      throw new ipc_exception('Invalid Key Index')
     }
 
     if (!config.ipcApiUrl || !this.isValidURL(config.ipcApiUrl)) {
-      throw new ipc_exception('Invalid IPC URL');
+      throw new ipc_exception('Invalid IPC URL')
     }
 
     if (!config.sid || !~~(config.sid)) {
-      throw new ipc_exception('Invalid SID');
+      throw new ipc_exception('Invalid SID')
     }
 
     if (!config.wallet || !Number.isInteger(config.wallet)) {
-      throw new ipc_exception('Invalid Wallet number');
+      throw new ipc_exception('Invalid Wallet number')
     }
 
     if (!config.version) {
-      throw new ipc_exception('Invalid IPC Version');
+      throw new ipc_exception('Invalid IPC Version')
     }
 
     if (!config.privateKey) {
-      throw new ipc_exception('Invalid Private key path');
+      throw new ipc_exception('Invalid Private key path')
     }
 
     if (!config.encryptPublicKey) {
-      throw new ipc_exception('Invalid Encrypt Public key path');
+      throw new ipc_exception('Invalid Encrypt Public key path')
     }
 
-    return true;
+    return true
   }
   this.isValidCard = (card) => {
     if (!card.token) {
       if (!card.number || !this.isValidCardNumber(card.number)) {
-        throw new ipc_exception('Invalid card number');
+        throw new ipc_exception('Invalid card number')
       }
 
       if (Object.getOwnPropertyNames(enums.CARD_TYPE)
-      .map(x => enums.CARD_TYPE[x])
-      .indexOf(card.type) == -1) {
-        throw new ipc_exception('Invalid value provided for CardType param');
+        .map(x => enums.CARD_TYPE[x])
+        .indexOf(card.type) == -1) {
+        throw new ipc_exception('Invalid value provided for CardType param')
       }
 
       if (!card.cvc || !this.isValidCVC(card.cvc)) {
-        throw new ipc_exception('Invalid card CVC');
+        throw new ipc_exception('Invalid card CVC')
       }
 
       if (!card.month || !Number.isInteger(card.month) || card.month <= 0 || card.month > 12) {
-        throw new ipc_exception('Invalid card expire date (MM)');
+        throw new ipc_exception('Invalid card expire date (MM)')
       }
 
       if (!card.year || !Number.isInteger(card.year) || card.year < new Date().getFullYear()) {
-        throw new ipc_exception('Invalid card expire date (YY)');
+        throw new ipc_exception('Invalid card expire date (YY)')
       }
     }
 
-    return true;
+    return true
   }
   this.isValidCustomer = (customer) => {
     if (!customer.firstNames) {
-      throw new ipc_exception('Invalid First names');
+      throw new ipc_exception('Invalid First names')
     }
 
     if (!customer.lastName) {
-      throw new ipc_exception('Invalid Last name');
+      throw new ipc_exception('Invalid Last name')
     }
 
     if (!customer.email || helper.isValidEmail(customer.email)) {
-      throw new ipc_exception('Invalid Email');
+      throw new ipc_exception('Invalid Email')
     }
 
-    return true;
+    return true
   }
   this.isValidURLs = (urls) => {
     if (!urls.cancelUrl || !this.isValidURL(urls.cancelUrl)) {
-      throw new ipc_exception('Invalid Cancel URL');
+      throw new ipc_exception('Invalid Cancel URL')
     }
 
     if (!urls.notifyUrl || !this.isValidURL(urls.notifyUrl)) {
-      throw new ipc_exception('Invalid Notify URL');
+      throw new ipc_exception('Invalid Notify URL')
     }
 
     if (!urls.okUrl || !this.isValidURL(urls.okUrl)) {
-      throw new ipc_exception('Invalid Success URL');
+      throw new ipc_exception('Invalid Success URL')
     }
 
     if (urls.reverseUrl && !this.isValidURL(urls.reverseUrl)) {
-      throw new ipc_exception('Invalid Reverse URL');
+      throw new ipc_exception('Invalid Reverse URL')
     }
-    return true;
+    return true
   }
   this.isValidCartTokenRequest = (cardTokenRequest) => {
     if (Object.getOwnPropertyNames(enums.CARD_TOKEN_REQUEST)
       .map(x => enums.CARD_TOKEN_REQUEST[x])
       .indexOf(cardTokenRequest) == -1) {
-      throw new ipc_exception('Invalid value provided for CardTokenRequest param');
+      throw new ipc_exception('Invalid value provided for CardTokenRequest param')
     }
-    return true;
+    return true
   }
   this.isValidPurchaseType = (purchaseType) => {
     if (Object.getOwnPropertyNames(enums.PURCHASE_TYPE)
       .map(x => enums.PURCHASE_TYPE[x])
       .indexOf(purchaseType) == -1) {
-      throw new ipc_exception('Invalid value provided for PurchaseType param');
+      throw new ipc_exception('Invalid value provided for PurchaseType param')
     }
-    return true;
+    return true
   }
   this.isValidPaymentMethod = (paymentMethod) => {
     if (Object.getOwnPropertyNames(enums.PAYMENT_METHOD)
       .map(x => enums.PAYMENT_METHOD[x])
       .indexOf(paymentMethod) == -1) {
-      throw new ipc_exception('Invalid value provided for PaymentMethod param');
+      throw new ipc_exception('Invalid value provided for PaymentMethod param')
     }
-    return true;
+    return true
   }
   this.isValidOutputFormat = (outputFormat) => {
     if (Object.getOwnPropertyNames(enums.COMMUNICATION_FORMAT)
       .map(x => enums.COMMUNICATION_FORMAT[x])
       .indexOf(outputFormat) == -1) {
-      throw new ipc_exception('Invalid Output format');
+      throw new ipc_exception('Invalid Output format')
     }
-    return true;
+    return true
   }
   this.isValidOrder = (order) => {
-    this.isValidCurrency(order.currency);
+    this.isValidCurrency(order.currency)
     if (!order.orderId) {
-      throw new ipc_exception('Invalid orderId');
+      throw new ipc_exception('Invalid orderId')
     }
-    return true;
+    return true
   }
   this.isValidCurrency = (currency) => {
     if (!currency) {
-      throw new ipc_exception('Invalid currency');
+      throw new ipc_exception('Invalid currency')
     }
-    return true;
+    return true
   }
   this.isCardTokenRequestOnly = (cardTokenRequest) => {
-    return cardTokenRequest === enums.CARD_TOKEN_REQUEST.CARD_TOKEN_REQUEST_ONLY_STORE;
+    return cardTokenRequest === enums.CARD_TOKEN_REQUEST.CARD_TOKEN_REQUEST_ONLY_STORE
   }
   this.isValidCardVerification = (cardVerification) => {
     if (Object.getOwnPropertyNames(enums.CARD_VERIFICATION)
       .map(x => enums.CARD_VERIFICATION[x])
       .indexOf(cardVerification) == -1) {
-      throw new ipc_exception('Invalid card verification');
+      throw new ipc_exception('Invalid card verification')
     }
-    return true;
+    return true
   }
   this.isValidStatus = (statusObj) => {
     if (Object.getOwnPropertyNames(enums.STATUS)
       .map(x => enums.STATUS[x])
       .indexOf(statusObj.Status) == -1) {
-      throw new ipc_exception('Invalid status response');
+      throw new ipc_exception('Invalid status response')
     }
-    //myPOS returns 1 always even if succes so:
+    // myPOS returns 1 always even if succes so:
     else if (statusObj.Status > 1 || statusObj.StatusMsg != 'Success') {
-      throw new ipc_exception(`Invalid status response: ${statusObj.StatusMsg}`);
+      throw new ipc_exception(`Invalid status response: ${statusObj.StatusMsg}`)
     }
     return true
   }
@@ -178,7 +178,7 @@ module.exports = (() => {
    */
   this.isValidEmail = (email) => {
     new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)
-      .test(String(email).toLowerCase());
+      .test(String(email).toLowerCase())
   }
 
   /**
@@ -195,7 +195,7 @@ module.exports = (() => {
       '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
       '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
       '(\\#[-a-z\\d_]*)?$', 'i') // fragment locator
-      .test(url);
+      .test(url)
   }
 
   /**
@@ -207,7 +207,7 @@ module.exports = (() => {
    */
   this.isValidIP = (ip) => {
     return new RegExp('^(?!.*\.$)((?!0\d)(1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$')
-      .test(ip);
+      .test(ip)
   }
 
   /**
@@ -218,7 +218,7 @@ module.exports = (() => {
    * @return boolean
    */
   this.isValidName = (name) => {
-    return new RegExp('^[a-zA-Z ]*$').test(name);
+    return new RegExp('^[a-zA-Z ]*$').test(name)
   }
 
   /**
@@ -229,7 +229,7 @@ module.exports = (() => {
    * @return boolean
    */
   this.isValidAmount = (amt) => {
-    return new RegExp('^(-)?[0-9]+(?:\.[0-9]{0,2})?$').test(amt + '');
+    return new RegExp('^(-)?[0-9]+(?:\.[0-9]{0,2})?$').test(amt + '')
   }
 
   /**
@@ -240,7 +240,7 @@ module.exports = (() => {
    * @return boolean
    */
   this.isValidCartQuantity = (quantity) => {
-    return Number.isInteger(quantity) && quantity > 0;
+    return Number.isInteger(quantity) && quantity > 0
   }
 
   /**
@@ -252,9 +252,9 @@ module.exports = (() => {
    */
   this.isValidTrnRef = (trnref) => {
     if (!trnref) {
-      throw new ipc_exception('Invalid trnref');
+      throw new ipc_exception('Invalid trnref')
     }
-    return true;
+    return true
   }
 
   /**
@@ -266,9 +266,9 @@ module.exports = (() => {
    */
   this.isValidOrderId = (orderId) => {
     if (!orderId) {
-      throw new ipc_exception('Invalid orderId');
+      throw new ipc_exception('Invalid orderId')
     }
-    return true;
+    return true
   }
 
   /**
@@ -279,53 +279,52 @@ module.exports = (() => {
    * @return boolean
    */
   this.isValidCardNumber = (cardNo) => {
-    cardNo = cardNo.split(' ').join('');
+    cardNo = cardNo.split(' ').join('')
 
     if (~~(cardNo) == 0 || cardNo.length > 19 || cardNo.length < 13) {
-      return false;
+      return false
     }
-    var sum = dub = add = chk = 0;
-    even = 0;
+    var sum = dub = add = chk = 0
+    even = 0
     for (var i = cardNo.length - 1; i >= 0; i--) {
       if (even == 1) {
-        dub = 2 * ~~(cardNo[i]);
+        dub = 2 * ~~(cardNo[i])
         if (dub > 9) {
-          add = dub - 9;
+          add = dub - 9
         } else {
-          add = dub;
+          add = dub
         }
-        even = 0;
+        even = 0
       } else {
-        add = ~~(cardNo[i]);
-        even = 1;
+        add = ~~(cardNo[i])
+        even = 1
       }
-      sum += add;
+      sum += add
     }
 
-    return ((sum % 10) == 0);
+    return ((sum % 10) == 0)
   }
 
   this.getCardType = (number) => {
-    var _meta = creditCardType(number);
-    if(!_meta.length)
-      throw new ipc_exception('Unknown card type');
-    
-    const _type = _meta[0].type;
-    
-    switch(_type){
+    var _meta = creditCardType(number)
+    if (!_meta.length) { throw new ipc_exception('Unknown card type') }
+
+    const _type = _meta[0].type
+
+    switch (_type) {
       default:
-        throw new ipc_exception('Unsupported card type');
+        throw new ipc_exception('Unsupported card type')
       case 'visa':
-        return enums.CARD_TYPE.CARD_TYPE_VISA;
+        return enums.CARD_TYPE.CARD_TYPE_VISA
       case 'mastercard':
-        return enums.CARD_TYPE.CARD_TYPE_MASTERCARD;
+        return enums.CARD_TYPE.CARD_TYPE_MASTERCARD
       case 'american-express':
-        return enums.CARD_TYPE.CARD_TYPE_AMEX;
+        return enums.CARD_TYPE.CARD_TYPE_AMEX
       case 'maestro':
-        return enums.CARD_TYPE.CARD_TYPE_MAESTRO;
+        return enums.CARD_TYPE.CARD_TYPE_MAESTRO
       case 'jcb':
-        return enums.CARD_TYPE.CARD_TYPE_JCB;
-    }    
+        return enums.CARD_TYPE.CARD_TYPE_JCB
+    }
   }
 
   /**
@@ -336,7 +335,7 @@ module.exports = (() => {
    * @return boolean
    */
   this.isValidCVC = (cvc) => {
-    return (Number.isInteger(cvc) && cvc >= 100 && cvc <= 999);
+    return (Number.isInteger(cvc) && cvc >= 100 && cvc <= 999)
   }
 
   /**
@@ -347,7 +346,7 @@ module.exports = (() => {
    * @return string type
    */
   this.escape = (text) => {
-    return he.encode(text);
+    return he.encode(text)
   }
 
   /**
@@ -368,7 +367,7 @@ module.exports = (() => {
    */
 
   this.flattenObjectValues = function (object) {
-    return flatten(object);
+    return flatten(object)
   }
 
   /**
@@ -381,35 +380,34 @@ module.exports = (() => {
    */
 
   this.parseResponseSignature = (config, _params) => {
-    var signature = _params.Signature;
-    delete _params.Signature;
+    var signature = _params.Signature
+    delete _params.Signature
 
-    var payload = this.flattenObjectValues(_params);
+    var payload = this.flattenObjectValues(_params)
     payload = Object.getOwnPropertyNames(payload)
       .map(x => payload[x])
-      .join('-');
+      .join('-')
 
-    var _concData = Buffer.from(payload).toString('base64');
+    var _concData = Buffer.from(payload).toString('base64')
 
-    var key = config.encryptPublicKey.trim().split('\n').map(x => x.trim()).join('\n');
-    var verifier = crypto.createVerify('SHA256');
-    verifier.update(_concData);
-    try{
-      verifier.verify(key, signature, 'base64');
-      return true;
-    }
-    catch(e){
-      return false;
+    var key = config.encryptPublicKey.trim().split('\n').map(x => x.trim()).join('\n')
+    var verifier = crypto.createVerify('SHA256')
+    verifier.update(_concData)
+    try {
+      verifier.verify(key, signature, 'base64')
+      return true
+    } catch (e) {
+      return false
     }
   }
 
   this.decodeHexStringToByteArray = function (hexString) {
-    var result = [];
-    while (hexString.length >= 2) { 
-        result.push(parseInt(hexString.substring(0, 2), 16));
-        hexString = hexString.substring(2, hexString.length);
+    var result = []
+    while (hexString.length >= 2) {
+      result.push(parseInt(hexString.substring(0, 2), 16))
+      hexString = hexString.substring(2, hexString.length)
     }
-    return Buffer.from(result);
+    return Buffer.from(result)
   }
 
   /**
@@ -421,12 +419,12 @@ module.exports = (() => {
    */
 
   this.encryptData = (config, data) => {
-    var key = config.encryptPublicKey.trim().split('\n').map(x => x.trim()).join('\n');
+    var key = config.encryptPublicKey.trim().split('\n').map(x => x.trim()).join('\n')
 
     return crypto.publicEncrypt({
       key,
-      padding: constants.RSA_PKCS1_PADDING //ENCRYPT_PADDING
-    }, Buffer.from(data + '')).toString("base64");
+      padding: constants.RSA_PKCS1_PADDING // ENCRYPT_PADDING
+    }, Buffer.from(data + '')).toString('base64')
   }
 
   /**
@@ -436,45 +434,48 @@ module.exports = (() => {
    */
 
   this.createSignature = (config, props) => {
-    const key = config.privateKey.trim().split('\n').map(x => x.trim()).join('\n');
+    const key = config.privateKey.trim().split('\n').map(x => x.trim()).join('\n')
 
-    var _params = {};
+    var _params = {}
     for (var a in props) {
-      _params[a] = decodeURIComponent(props[a] + '');
+      _params[a] = decodeURIComponent(props[a] + '')
     }
 
-    var payload = this.flattenObjectValues(_params);
+    var payload = this.flattenObjectValues(_params)
     payload = Object.getOwnPropertyNames(payload)
       .map(x => payload[x])
-      .join('-');
+      .join('-')
 
-    var _concData = Buffer.from(payload).toString('base64');
+    var _concData = Buffer.from(payload).toString('base64')
 
-    const sign = crypto.createSign('SHA256');
-    sign.write(_concData);
-    sign.end();
+    const sign = crypto.createSign('SHA256')
+    sign.write(_concData)
+    sign.end()
 
-    return sign.sign(key, 'base64');
+    return sign.sign(key, 'base64')
   }
 
   this.generateHtmlPostBody = async (config, justForm = false, props) => {
-    props['Signature'] = this.createSignature(config, props);
+    props.Signature = this.createSignature(config, props)
     const _form = `<form id="ipcForm" name="ipcForm" action="${config.ipcApiUrl}" method="post">
         ${Object.getOwnPropertyNames(props).map(x => {
-          return `        <input type="hidden" name="${x}" value="${props[x]}" />`;
-        }).join('\n')}
+      return `        <input type="hidden" name="${x}" value="${props[x]}" />`
+    }).join('\n')}
 </form>`
-        if(justForm)
-          return _form;
+    if (justForm) { return _form }
 
     return `<html>
     <head><title>Please wait...</title></head>
     <body onload="document.getElementById('ipcForm').submit()">
       ${_form}
     </body>
-  </html>`;
+  </html>`
   }
 
+  this.generateObject = async (config, props) => {
+    props.Signature = this.createSignature(config, props)
+    return props
+  }
   /**
    * Send POST Request to API and returns Response object with validated response data
    *
@@ -483,12 +484,12 @@ module.exports = (() => {
    */
 
   this.doPostRequest = async (config, props, headers = {}) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams()
     Object.getOwnPropertyNames(props)
       .forEach((x, i) => {
-        params.append(x, props[x]);
-      });
-    params.append('Signature', this.createSignature(config, props));
+        params.append(x, props[x])
+      })
+    params.append('Signature', this.createSignature(config, props))
 
     return await axios.post(config.ipcApiUrl, params, {
       headers: {
@@ -497,18 +498,17 @@ module.exports = (() => {
       }
     })
       .then((res) => {
-
-        this.isValidStatus(res.data);
+        this.isValidStatus(res.data)
 
         if (this.parseResponseSignature(config, res.data)) {
-          delete res.data.Signature;
-          delete res.data.Status;
-          delete res.data.StatusMsg;
-          return res.data;
+          delete res.data.Signature
+          delete res.data.Status
+          delete res.data.StatusMsg
+          return res.data
         }
-        throw new ipc_exception('Invalid Response Signature');
+        throw new ipc_exception('Invalid Response Signature')
       })
   }
 
-  return this;
-})();
+  return this
+})()
